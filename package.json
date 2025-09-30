@@ -1,24 +1,30 @@
 {
   "name": "poker-telegram-bot",
-  "version": "1.0.0",
-  "description": "Telegram bot for playing poker",
-  "main": "bot.js",
+  "version": "2.0.0",
+  "description": "Telegram bot for playing poker (TypeScript + grammY)",
+  "main": "dist/bot.js",
   "scripts": {
-    "start": "node bot.js",
-    "dev": "nodemon bot.js"
+    "start": "node dist/bot.js",
+    "dev": "tsx watch src/bot.ts",
+    "build": "tsc",
+    "prebuild": "rm -rf dist"
   },
   "dependencies": {
-    "dotenv": "^17.2.3",
-    "node-telegram-bot-api": "^0.66.0"
+    "dotenv": "^16.4.5",
+    "grammy": "^1.21.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "@types/node": "^20.11.19",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3"
   },
   "keywords": [
     "telegram",
     "bot",
     "poker",
-    "game"
+    "game",
+    "typescript",
+    "grammy"
   ],
   "author": "Your Name",
   "license": "MIT"
