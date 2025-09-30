@@ -1,5 +1,5 @@
-import {Player, PokerGame} from '../game';
-import {Card} from '../card';
+import { Player, PokerGame } from '../game';
+import { Card } from '../card';
 
 describe('PokerGame', () => {
   let game: PokerGame;
@@ -151,7 +151,7 @@ describe('PokerGame', () => {
       game.currentBet = 0;
       const currentPlayer = game.getCurrentPlayer();
       currentPlayer!.currentBet = 0;
-        const success = game.playerAction(currentPlayer!.id, 'check');
+      const success = game.playerAction(currentPlayer!.id, 'check');
 
       expect(success).toBe(true);
       expect(currentPlayer!.hasActed).toBe(true);

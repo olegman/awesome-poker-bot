@@ -15,7 +15,7 @@ const bot = new Bot(BOT_TOKEN);
 const games = new Map<number, PokerGame>();
 
 // Команда /start
-bot.command('start', async (ctx) => {
+bot.command('start', async (ctx): Promise<void> => {
   await ctx.reply(
     '🃏 Добро пожаловать в покер-бота!\n\n' +
       'Доступные команды:\n' +
@@ -29,17 +29,20 @@ bot.command('start', async (ctx) => {
       '/call - Колл\n' +
       '/check - Чек\n' +
       '/raise [сумма] - Рейз\n\n' +
-      'Для игры нужно минимум 2 игрока!'
+      'Для игры нужно минимум 2 игрока!',
   );
 });
 
 // Команда /newgame
-bot.command('newgame', async (ctx) => {
+bot.command('newgame', async (ctx): Promise<void> => {
   const chatId = ctx.chat?.id;
-  if (!chatId) return;
+  if (!chatId) {
+    return;
+  }
 
   if (games.has(chatId)) {
-    const keyboard = createGameManagementKeyboard(true, games.get(chatId)!.players.size);
+    const game = games.get(chatId);
+    const keyboard = createGameManagementKeyboard(true, game?.players.size ?? 0);
     await ctx.reply('❌ Игра уже создана в этом чате!', {
       reply_markup: keyboard,
     });
@@ -54,21 +57,25 @@ bot.command('newgame', async (ctx) => {
 });
 
 // Команда /join
-bot.command('join', async (ctx) => {
+bot.command('join', async (ctx): Promise<void> => {
   const chatId = ctx.chat?.id;
   const playerId = ctx.from?.id;
-  const playerName = ctx.from?.first_name || ctx.from?.username || 'Игрок';
+  const playerName = ctx.from?.first_name ?? ctx.from?.username ?? 'Игрок';
 
-  if (!chatId || !playerId) return;
+  if (!chatId || !playerId) {
+    return;
+  }
   await handleJoinGame(ctx, chatId, playerId, playerName);
 });
 
 // Команда /leave
-bot.command('leave', async (ctx) => {
+bot.command('leave', async (ctx): Promise<void> => {
   const chatId = ctx.chat?.id;
   const playerId = ctx.from?.id;
 
-  if (!chatId || !playerId) return;
+  if (!chatId || !playerId) {
+    return;
+  }
 
   const game = games.get(chatId);
   if (!game) {
@@ -89,25 +96,31 @@ bot.command('leave', async (ctx) => {
 });
 
 // Команда /startgame
-bot.command('startgame', async (ctx) => {
+bot.command('startgame', async (ctx): Promise<void> => {
   const chatId = ctx.chat?.id;
-  if (!chatId) return;
+  if (!chatId) {
+    return;
+  }
   await handleStartGame(ctx, chatId);
 });
 
 // Команда /status
-bot.command('status', async (ctx) => {
+bot.command('status', async (ctx): Promise<void> => {
   const chatId = ctx.chat?.id;
-  if (!chatId) return;
+  if (!chatId) {
+    return;
+  }
   await handleGameStatus(ctx, chatId);
 });
 
 // Команда /cards
-bot.command('cards', async (ctx) => {
+bot.command('cards', async (ctx): Promise<void> => {
   const chatId = ctx.chat?.id;
   const playerId = ctx.from?.id;
 
-  if (!chatId || !playerId) return;
+  if (!chatId || !playerId) {
+    return;
+  }
 
   const game = games.get(chatId);
   if (!game) {
@@ -122,41 +135,46 @@ bot.command('cards', async (ctx) => {
   }
 
   try {
-    await bot.api.sendMessage(
-      playerId,
-      `🃏 Ваши карты: ${player.getHandString()}\n💰 Фишки: ${player.chips}`
-    );
+    await bot.api.sendMessage(playerId, `🃏 Ваши карты: ${player.getHandString()}\n💰 Фишки: ${player.chips}`);
   } catch {
     await ctx.reply(`${player.name}, не удалось отправить карты в личные сообщения. Напишите боту /start`);
   }
 });
 
 // Игровые действия
-bot.command('fold', async (ctx) => {
+bot.command('fold', async (ctx): Promise<void> => {
   const chatId = ctx.chat?.id;
   const playerId = ctx.from?.id;
-  if (!chatId || !playerId) return;
+  if (!chatId || !playerId) {
+    return;
+  }
   await handleInlinePlayerAction(ctx, chatId, playerId, 'fold');
 });
 
-bot.command('call', async (ctx) => {
+bot.command('call', async (ctx): Promise<void> => {
   const chatId = ctx.chat?.id;
   const playerId = ctx.from?.id;
-  if (!chatId || !playerId) return;
+  if (!chatId || !playerId) {
+    return;
+  }
   await handleInlinePlayerAction(ctx, chatId, playerId, 'call');
 });
 
-bot.command('check', async (ctx) => {
+bot.command('check', async (ctx): Promise<void> => {
   const chatId = ctx.chat?.id;
   const playerId = ctx.from?.id;
-  if (!chatId || !playerId) return;
+  if (!chatId || !playerId) {
+    return;
+  }
   await handleInlinePlayerAction(ctx, chatId, playerId, 'check');
 });
 
-bot.command('raise', async (ctx) => {
+bot.command('raise', async (ctx): Promise<void> => {
   const chatId = ctx.chat?.id;
   const playerId = ctx.from?.id;
-  if (!chatId || !playerId) return;
+  if (!chatId || !playerId) {
+    return;
+  }
 
   const match = ctx.message?.text?.match(/\/raise\s+(\d+)/);
   const amount = match ? parseInt(match[1]) : 0;
@@ -170,13 +188,15 @@ bot.command('raise', async (ctx) => {
 });
 
 // Обработчик callback query
-bot.on('callback_query:data', async (ctx) => {
+bot.on('callback_query:data', async (ctx): Promise<void> => {
   const chatId = ctx.chat?.id;
   const playerId = ctx.from?.id;
-  const playerName = ctx.from?.first_name || ctx.from?.username || 'Игрок';
+  const playerName = ctx.from?.first_name ?? ctx.from?.username ?? 'Игрок';
   const data = ctx.callbackQuery.data;
 
-  if (!chatId || !playerId) return;
+  if (!chatId || !playerId) {
+    return;
+  }
 
   await ctx.answerCallbackQuery();
 
@@ -204,26 +224,30 @@ bot.on('callback_query:data', async (ctx) => {
     case 'check':
       await handleInlinePlayerAction(ctx, chatId, playerId, 'check');
       break;
-    case 'raise':
+    case 'raise': {
       if (params.length > 0) {
-        const amount = parseInt(params[0]);
+        const amount = parseInt(params[0], 10);
         await handleInlinePlayerAction(ctx, chatId, playerId, 'raise', amount);
       }
       break;
-    case 'allin':
+    }
+    case 'allin': {
       const game = games.get(chatId);
-      if (game && game.players.has(playerId)) {
-        const player = game.players.get(playerId)!;
-        await handleInlinePlayerAction(ctx, chatId, playerId, 'raise', player.chips + player.currentBet);
+      if (game?.players.has(playerId)) {
+        const player = game.players.get(playerId);
+        if (player) {
+          await handleInlinePlayerAction(ctx, chatId, playerId, 'raise', player.chips + player.currentBet);
+        }
       }
       break;
+    }
   }
 });
 
 // Вспомогательные функции
 function getGameStatusMessage(game: PokerGame): string {
   const status = game.getGameStatus();
-  let message = `🎯 Статус игры:\n`;
+  let message = '🎯 Статус игры:\n';
   message += `💰 Банк: ${status.pot}\n`;
   message += `📊 Текущая ставка: ${status.currentBet}\n`;
   message += `🎪 Стадия: ${getStageEmoji(status.gameState)} ${status.gameState}\n`;
@@ -249,7 +273,7 @@ function getStageEmoji(stage: string): string {
     river: '🌊',
     showdown: '🏆',
   };
-  return emojis[stage] || '🎮';
+  return emojis[stage] ?? '🎮';
 }
 
 function createGameManagementKeyboard(gameExists = false, playersCount = 0): InlineKeyboard {
@@ -357,7 +381,7 @@ async function handleStartGame(ctx: Context, chatId: number): Promise<void> {
   }
 
   if (game.startGame()) {
-    await ctx.reply('🚀 Игра началась! Карты розданы.\n\n' + getGameStatusMessage(game));
+    await ctx.reply(`🚀 Игра началась! Карты розданы.\n\n${getGameStatusMessage(game)}`);
 
     for (const [playerId, player] of game.players) {
       try {
@@ -371,7 +395,7 @@ async function handleStartGame(ctx: Context, chatId: number): Promise<void> {
     if (currentPlayer) {
       const keyboard = createPlayerActionKeyboard(game, currentPlayer.id);
       await ctx.reply(`⏰ Ходит: ${currentPlayer.name}`, {
-        reply_markup: keyboard || undefined,
+        reply_markup: keyboard ?? undefined,
       });
     }
   } else {
@@ -397,7 +421,7 @@ async function handleInlinePlayerAction(
   chatId: number,
   playerId: number,
   action: 'fold' | 'call' | 'check' | 'raise',
-  amount = 0
+  amount = 0,
 ): Promise<void> {
   const game = games.get(chatId);
   if (!game) {
@@ -418,26 +442,30 @@ async function handleInlinePlayerAction(
 
   const currentPlayer = game.getCurrentPlayer();
   if (!currentPlayer || currentPlayer.id !== playerId) {
-    await ctx.reply(`❌ Сейчас ходит ${currentPlayer?.name}.`);
+    await ctx.reply(`❌ Сейчас ходит ${currentPlayer?.name ?? 'неизвестный игрок'}.`);
     return;
   }
 
   if (game.playerAction(playerId, action, amount)) {
     let actionMessage = `${player.name} `;
     switch (action) {
-      case 'fold':
+      case 'fold': {
         actionMessage += 'сбросил карты 🚫';
         break;
-      case 'call':
+      }
+      case 'call': {
         const callAmount = game.currentBet - player.currentBet;
         actionMessage += `сделал колл (${callAmount} фишек) 📞`;
         break;
-      case 'check':
+      }
+      case 'check': {
         actionMessage += 'сделал чек ✅';
         break;
-      case 'raise':
+      }
+      case 'raise': {
         actionMessage += `поднял до ${amount} фишек 📈`;
         break;
+      }
     }
 
     await ctx.reply(actionMessage);
@@ -489,7 +517,7 @@ async function handleInlinePlayerAction(
         if (nextPlayer) {
           const keyboard = createPlayerActionKeyboard(game, nextPlayer.id);
           await ctx.reply(`⏰ Ходит: ${nextPlayer.name}`, {
-            reply_markup: keyboard || undefined,
+            reply_markup: keyboard ?? undefined,
           });
         }
       }
@@ -502,7 +530,7 @@ async function handleInlinePlayerAction(
       if (nextPlayer) {
         const keyboard = createPlayerActionKeyboard(game, nextPlayer.id);
         await ctx.reply(`⏰ Ходит: ${nextPlayer.name}`, {
-          reply_markup: keyboard || undefined,
+          reply_markup: keyboard ?? undefined,
         });
       }
     }
@@ -510,13 +538,13 @@ async function handleInlinePlayerAction(
 }
 
 // Запуск бота
-bot.start({
-  onStart: () => {
-    console.log('🤖 Покер бот запущен!');
+void bot.start({
+  onStart: (): void => {
+    console.info('🤖 Покер бот запущен!');
   },
 });
 
 // Обработка ошибок
-bot.catch((err) => {
+bot.catch((err): void => {
   console.error('Ошибка бота:', err);
 });

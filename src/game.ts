@@ -24,7 +24,10 @@ export class Player implements IPlayer {
   isFolded = false;
   isAllIn = false;
 
-  constructor(public id: number, public name: string) {}
+  constructor(
+    public id: number,
+    public name: string,
+  ) {}
 
   addCard(card: Card): void {
     this.hand.push(card);
@@ -89,12 +92,20 @@ export class Player implements IPlayer {
       }
     }
 
-    return bestHand!;
+    if (!bestHand) {
+      throw new Error('Unable to evaluate hand');
+    }
+
+    return bestHand;
   }
 
   getAllCombinations(cards: Card[], n: number): Card[][] {
-    if (n === 1) return cards.map((c) => [c]);
-    if (n === cards.length) return [cards];
+    if (n === 1) {
+      return cards.map((c) => [c]);
+    }
+    if (n === cards.length) {
+      return [cards];
+    }
 
     const combinations: Card[][] = [];
     for (let i = 0; i <= cards.length - n; i++) {
@@ -135,8 +146,8 @@ export class Player implements IPlayer {
     }
 
     if (counts[0] === 4) {
-      const fourKind = uniqueValues.find((v) => valueCounts[v] === 4)!;
-      const kicker = uniqueValues.find((v) => valueCounts[v] === 1);
+      const fourKind = uniqueValues.find((v) => valueCounts[v] === 4) ?? 0;
+      const kicker = uniqueValues.find((v) => valueCounts[v] === 1) ?? 0;
       return {
         rank: HAND_RANKINGS.FOUR_OF_A_KIND,
         description: 'Каре',
@@ -147,8 +158,8 @@ export class Player implements IPlayer {
     }
 
     if (counts[0] === 3 && counts[1] === 2) {
-      const trips = uniqueValues.find((v) => valueCounts[v] === 3)!;
-      const pair = uniqueValues.find((v) => valueCounts[v] === 2)!;
+      const trips = uniqueValues.find((v) => valueCounts[v] === 3) ?? 0;
+      const pair = uniqueValues.find((v) => valueCounts[v] === 2) ?? 0;
       return {
         rank: HAND_RANKINGS.FULL_HOUSE,
         description: 'Фулл Хаус',
@@ -167,14 +178,14 @@ export class Player implements IPlayer {
     }
 
     if (counts[0] === 3) {
-      const trips = uniqueValues.find((v) => valueCounts[v] === 3)!;
+      const trips = uniqueValues.find((v) => valueCounts[v] === 3) ?? 0;
       const kickers = uniqueValues.filter((v) => valueCounts[v] === 1).sort((a, b) => b - a);
       return { rank: HAND_RANKINGS.THREE_OF_A_KIND, description: 'Тройка', high: trips, kickers, cards: sortedCards };
     }
 
     if (counts[0] === 2 && counts[1] === 2) {
       const pairs = uniqueValues.filter((v) => valueCounts[v] === 2).sort((a, b) => b - a);
-      const kicker = uniqueValues.find((v) => valueCounts[v] === 1);
+      const kicker = uniqueValues.find((v) => valueCounts[v] === 1) ?? 0;
       return {
         rank: HAND_RANKINGS.TWO_PAIR,
         description: 'Две Пары',
@@ -186,7 +197,7 @@ export class Player implements IPlayer {
     }
 
     if (counts[0] === 2) {
-      const pair = uniqueValues.find((v) => valueCounts[v] === 2)!;
+      const pair = uniqueValues.find((v) => valueCounts[v] === 2) ?? 0;
       const kickers = uniqueValues.filter((v) => valueCounts[v] === 1).sort((a, b) => b - a);
       return { rank: HAND_RANKINGS.PAIR, description: 'Пара', high: pair, kickers, cards: sortedCards };
     }
@@ -196,12 +207,13 @@ export class Player implements IPlayer {
 
   isStraight(values: number[]): boolean {
     const uniqueValues = [...new Set(values)].sort((a, b) => a - b);
-    if (uniqueValues.length !== 5) return false;
+    if (uniqueValues.length !== 5) {
+      return false;
+    }
 
     for (let i = 1; i < uniqueValues.length; i++) {
       if (uniqueValues[i] !== uniqueValues[i - 1] + 1) {
         return uniqueValues.join(',') === '2,3,4,5,14';
-
       }
     }
     return true;
@@ -211,22 +223,27 @@ export class Player implements IPlayer {
     if (hand1.rank !== hand2.rank) {
       return hand1.rank - hand2.rank;
     }
-
     switch (hand1.rank) {
       case HAND_RANKINGS.STRAIGHT_FLUSH:
       case HAND_RANKINGS.STRAIGHT:
         return (hand1.high as number) - (hand2.high as number);
 
-      case HAND_RANKINGS.FOUR_OF_A_KIND:
-        if (hand1.high !== hand2.high) return (hand1.high as number) - (hand2.high as number);
-        return (hand1.kicker || 0) - (hand2.kicker || 0);
+      case HAND_RANKINGS.FOUR_OF_A_KIND: {
+        if (hand1.high !== hand2.high) {
+          return (hand1.high as number) - (hand2.high as number);
+        }
+        return (hand1.kicker ?? 0) - (hand2.kicker ?? 0);
+      }
 
-      case HAND_RANKINGS.FULL_HOUSE:
-        if (hand1.high !== hand2.high) return (hand1.high as number) - (hand2.high as number);
-        return (hand1.low || 0) - (hand2.low || 0);
+      case HAND_RANKINGS.FULL_HOUSE: {
+        if (hand1.high !== hand2.high) {
+          return (hand1.high as number) - (hand2.high as number);
+        }
+        return (hand1.low ?? 0) - (hand2.low ?? 0);
+      }
 
       case HAND_RANKINGS.FLUSH:
-      case HAND_RANKINGS.HIGH_CARD:
+      case HAND_RANKINGS.HIGH_CARD: {
         const high1 = hand1.high as number[];
         const high2 = hand2.high as number[];
         for (let i = 0; i < high1.length; i++) {
@@ -235,19 +252,31 @@ export class Player implements IPlayer {
           }
         }
         return 0;
+      }
 
-      case HAND_RANKINGS.THREE_OF_A_KIND:
-        if (hand1.high !== hand2.high) return (hand1.high as number) - (hand2.high as number);
-        return this.compareKickers(hand1.kickers || [], hand2.kickers || []);
+      case HAND_RANKINGS.THREE_OF_A_KIND: {
+        if (hand1.high !== hand2.high) {
+          return (hand1.high as number) - (hand2.high as number);
+        }
+        return this.compareKickers(hand1.kickers ?? [], hand2.kickers ?? []);
+      }
 
-      case HAND_RANKINGS.TWO_PAIR:
-        if (hand1.high !== hand2.high) return (hand1.high as number) - (hand2.high as number);
-        if (hand1.low !== hand2.low) return (hand1.low || 0) - (hand2.low || 0);
-        return (hand1.kicker || 0) - (hand2.kicker || 0);
+      case HAND_RANKINGS.TWO_PAIR: {
+        if (hand1.high !== hand2.high) {
+          return (hand1.high as number) - (hand2.high as number);
+        }
+        if (hand1.low !== hand2.low) {
+          return (hand1.low ?? 0) - (hand2.low ?? 0);
+        }
+        return (hand1.kicker ?? 0) - (hand2.kicker ?? 0);
+      }
 
-      case HAND_RANKINGS.PAIR:
-        if (hand1.high !== hand2.high) return (hand1.high as number) - (hand2.high as number);
-        return this.compareKickers(hand1.kickers || [], hand2.kickers || []);
+      case HAND_RANKINGS.PAIR: {
+        if (hand1.high !== hand2.high) {
+          return (hand1.high as number) - (hand2.high as number);
+        }
+        return this.compareKickers(hand1.kickers ?? [], hand2.kickers ?? []);
+      }
     }
 
     return 0;
@@ -387,25 +416,29 @@ export class PokerGame {
     }
 
     switch (action) {
-      case 'fold':
+      case 'fold': {
         player.fold();
         break;
-      case 'call':
+      }
+      case 'call': {
         const callAmount = this.currentBet - player.currentBet;
         const actualBet = player.bet(callAmount);
         this.pot += actualBet;
         break;
-      case 'raise':
+      }
+      case 'raise': {
         const raiseAmount = Math.max(amount, this.currentBet * 2);
         const totalBet = player.bet(raiseAmount - player.currentBet);
         this.pot += totalBet;
         this.currentBet = raiseAmount;
         break;
-      case 'check':
+      }
+      case 'check': {
         if (player.currentBet === this.currentBet) {
           player.hasActed = true;
         }
         break;
+      }
     }
 
     return true;
@@ -439,7 +472,7 @@ export class PokerGame {
       currentBet: this.currentBet,
       communityCards: this.getCommunityCardsString(),
       activePlayers: activePlayers.length,
-      currentPlayer: this.getCurrentPlayer()?.name || 'None',
+      currentPlayer: this.getCurrentPlayer()?.name ?? 'None',
     };
   }
 
@@ -482,7 +515,9 @@ export class PokerGame {
     for (const pot of this.sidePots) {
       const activePlayers = pot.eligiblePlayers.filter((p) => !p.isFolded);
 
-      if (activePlayers.length === 0) continue;
+      if (activePlayers.length === 0) {
+        continue;
+      }
 
       if (activePlayers.length === 1) {
         const winner = activePlayers[0];
@@ -539,14 +574,14 @@ export class PokerGame {
       13: 'K',
       14: 'A',
     };
-    return (values[card.value] || card.value.toString()) + card.toString().slice(-2);
+    const valueStr = values[card.value] ?? card.value.toString();
+    return valueStr + card.toString().slice(-2);
   }
 
   formatGameResults(results: GameResult<Player>[]): string {
     let message = '🏆 РЕЗУЛЬТАТЫ ИГРЫ:\n\n';
 
-    for (let i = 0; i < results.length; i++) {
-      const result = results[i];
+    for (const result of results) {
       const potName = result.potType.charAt(0).toUpperCase() + result.potType.slice(1);
 
       message += `💰 ${potName} пот (${result.amount} фишек):\n`;
@@ -567,17 +602,16 @@ export class PokerGame {
         }
 
         if (result.winners.length > 1) {
-          message += `💵 По ${result.amountPerWinner} фишек каждому\n`;
+          message += `💵 По ${result.amountPerWinner ?? 0} фишек каждому\n`;
         }
       }
       message += '\n';
     }
 
     message += '💰 ФИНАЛЬНЫЕ БАЛАНСЫ:\n';
-    const playerArray = Array.from(this.players.values());
-    playerArray.forEach((player) => {
+    for (const player of this.players.values()) {
       message += `${player.name}: ${player.chips} фишек\n`;
-    });
+    }
 
     return message;
   }

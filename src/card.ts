@@ -1,7 +1,10 @@
 import { Suit, ICard } from './types';
 
 export class Card implements ICard {
-  constructor(public suit: Suit, public value: number) {}
+  constructor(
+    public suit: Suit,
+    public value: number,
+  ) {}
 
   toString(): string {
     const suits: Record<Suit, string> = {
